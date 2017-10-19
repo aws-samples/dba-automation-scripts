@@ -1,0 +1,195 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation template for Restoring RDS database from snapshot.
+Parameters:
+    DatabaseInstanceType:
+        Default: db.r3.large
+        AllowedValues:
+            - db.m4.large
+            - db.m4.xlarge
+            - db.m4.2xlarge
+            - db.r3.large
+            - db.r3.xlarge
+            - db.r3.2xlarge
+        Description: The instance type to use for this test iteration.
+        Type: String
+    DatabaseSecurityGroups:
+        Type: List<AWS::EC2::SecurityGroup::Id>
+        Description: Security group in your VPC with ingress to your database port.
+    DatabaseSnapshotIdentifier:
+        Description: The name or id of the master snapshot to restore for the test cycle
+        Type: String
+    DatabaseMonitoringRole:
+        Description: The ARN of the monitoring role to use for enhanced monitoring
+        Type: String
+    DatabaseParameterGroup:
+        Description: The name of the parameter group to use for this test cycle
+        Type: String
+    DatabaseOptionGroup:
+        Description: The name of the option group to use for Native Backup process
+        Type: String
+    DatabaseSNSNotification:
+        Description: The ARN of Amazon Simple Notification Service (Amazon SNS) topic
+        Type: String
+Metadata:
+    AWS::CloudFormation::Interface:
+        ParameterGroups:
+            - Label:
+                default: Account and VPC values, same for each test in the account
+              Parameters:
+                - DatabaseSecurityGroups
+                - DatabaseSnapshotIdentifier
+                - DatabaseMonitoringRole
+                - DatabaseSNSNotification
+            - Label:
+                default: Unit test values, modified per test cycle
+              Parameters:
+                - DatabaseInstanceType
+                - DatabaseParameterGroup
+                - DatabaseOptionGroup
+        ParameterLabels:
+            DatabaseSecurityGroups:
+                default: Security group
+            DatabaseSnapshotIdentifier:
+                default: Snapshot to restore
+            DatabaseMonitoringRole:
+                default: CloudWatch monitoring role
+            DatabaseInstanceType:
+                default: RDS instance type
+            DatabaseParameterGroup:
+                default: RDS parameter group
+            DatabaseOptionGroup:
+                default: RDS option group
+            DatabaseSNSNotification:
+                default: Amazon SNS topic
+Resources:
+  SQLDatabase:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      AutoMinorVersionUpgrade: false
+      BackupRetentionPeriod: 1
+      CharacterSetName: String
+      DBInstanceClass:
+        Ref: DatabaseInstanceType
+      DBSnapshotIdentifier:
+        Ref: DatabaseSnapshotIdentifier
+      DBSubnetGroupName: "default"
+      MonitoringInterval: 5
+      MonitoringRoleArn:
+        Ref: DatabaseMonitoringRole
+      MultiAZ: true
+      DBParameterGroupName:
+        Ref: DatabaseParameterGroup
+      OptionGroupName:
+        Ref: DatabaseOptionGroup
+      PubliclyAccessible: true
+      Tags:
+        -
+          Key: "Name"
+          Value: "sqlunittest"
+        -
+          Key: "project"
+          Value: "development unittest"
+      VPCSecurityGroups:
+        Ref: DatabaseSecurityGroups
+  BlockedTransactionAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+        ActionsEnabled: true
+        AlarmActions:
+          - Ref: DatabaseSNSNotification
+        AlarmDescription: "Blocked-transaction"
+        ComparisonOperator: "GreaterThanOrEqualToThreshold"
+        Dimensions:
+          - Name: DBInstanceIdentifier
+            Value:
+                Ref: SQLDatabase
+        EvaluationPeriods: 1
+        MetricName: "BlockedTransactions"
+        Namespace: "AWS/RDS"
+        Period: 300
+        Statistic: Maximum
+        Threshold: 1.0
+        TreatMissingData: "notBreaching"
+  CommitLatencyAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+        ActionsEnabled: true
+        AlarmActions:
+          - Ref: DatabaseSNSNotification
+        AlarmDescription: "Commit-latency"
+        ComparisonOperator: "GreaterThanOrEqualToThreshold"
+        Dimensions:
+          - Name: DBInstanceIdentifier
+            Value:
+                Ref: SQLDatabase
+        EvaluationPeriods: 2
+        MetricName: "CommitLatency"
+        Namespace: "AWS/RDS"
+        Period: 300
+        Statistic: Maximum
+        Threshold: 5.0
+        TreatMissingData: "notBreaching"
+  DeleteLatencyAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+        ActionsEnabled: true
+        AlarmActions:
+          - Ref: DatabaseSNSNotification
+        AlarmDescription: "Delete-latency"
+        ComparisonOperator: "GreaterThanOrEqualToThreshold"
+        Dimensions:
+          - Name: DBInstanceIdentifier
+            Value:
+                Ref: SQLDatabase
+        EvaluationPeriods: 2
+        MetricName: "DeleteLatency"
+        Namespace: "AWS/RDS"
+        Period: 300
+        Statistic: Maximum
+        Threshold: 1.0
+        TreatMissingData: "notBreaching"
+  InsertLatencyAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+        ActionsEnabled: true
+        AlarmActions:
+          - Ref: DatabaseSNSNotification
+        AlarmDescription: "Insert-latency"
+        ComparisonOperator: "GreaterThanOrEqualToThreshold"
+        Dimensions:
+          - Name: DBInstanceIdentifier
+            Value:
+                Ref: SQLDatabase
+        EvaluationPeriods: 2
+        MetricName: "InsertLatency"
+        Namespace: "AWS/RDS"
+        Period: 300
+        Statistic: Maximum
+        Threshold: 1.0
+        TreatMissingData: "notBreaching"
+  SelectLatencyAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+        ActionsEnabled: true
+        AlarmActions:
+          - Ref: DatabaseSNSNotification
+        AlarmDescription: "Select-latency"
+        ComparisonOperator: "GreaterThanOrEqualToThreshold"
+        Dimensions:
+          - Name: DBInstanceIdentifier
+            Value:
+                Ref: SQLDatabase
+        EvaluationPeriods: 2
+        MetricName: "SelectLatency"
+        Namespace: "AWS/RDS"
+        Period: 300
+        Statistic: Maximum
+        Threshold: 1.0
+        TreatMissingData: "notBreaching"
+Outputs:
+  SQLDatabaseEndpoint:
+    Description: Database endpoint
+    Value: !Sub "${SQLDatabase.Endpoint.Address}:${SQLDatabase.Endpoint.Port}"
+  BlockedTransactionAlarmARN:
+    Description: ARN of blocked transaction alarm
+    Value: !GetAtt BlockedTransactionAlarm.Arn
