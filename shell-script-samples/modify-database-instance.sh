@@ -14,10 +14,6 @@ OPTION_GROUP_NAME="sqlserver-se-12-native-backup"
 aws rds modify-db-instance --db-instance-identifier $DB --db-instance-class db.m4.xlarge \
     --apply-immediately --region $REGION
 
-# modify the rds instance to use a different parameter group and apply it immediately
-aws rds modify-db-instance --db-instance-identifier $DB --db-parameter-group-name $PARAMTER_GROUP_NAME \
-    --apply-immediately --region $REGION
-
 # modify the rds instance to use a different option group and apply it immediately
 aws rds modify-db-instance --db-instance-identifier $DB --option-group-name  $OPTION_GROUP_NAME\
     --apply-immediately --region $REGION

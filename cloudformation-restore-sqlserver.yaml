@@ -91,96 +91,58 @@ Resources:
           Value: "development unittest"
       VPCSecurityGroups:
         Ref: DatabaseSecurityGroups
-  BlockedTransactionAlarm:
+  WritethroughputAlarm:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
         ActionsEnabled: true
         AlarmActions:
           - Ref: DatabaseSNSNotification
-        AlarmDescription: "Blocked-transaction"
+        AlarmDescription: "Write-throughput"
         ComparisonOperator: "GreaterThanOrEqualToThreshold"
         Dimensions:
           - Name: DBInstanceIdentifier
             Value:
                 Ref: SQLDatabase
         EvaluationPeriods: 1
-        MetricName: "BlockedTransactions"
+        MetricName: "Writethroughputs"
         Namespace: "AWS/RDS"
         Period: 300
         Statistic: Maximum
         Threshold: 1.0
         TreatMissingData: "notBreaching"
-  CommitLatencyAlarm:
+  ReadLatencyAlarm:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
         ActionsEnabled: true
         AlarmActions:
           - Ref: DatabaseSNSNotification
-        AlarmDescription: "Commit-latency"
+        AlarmDescription: "Read-latency"
         ComparisonOperator: "GreaterThanOrEqualToThreshold"
         Dimensions:
           - Name: DBInstanceIdentifier
             Value:
                 Ref: SQLDatabase
         EvaluationPeriods: 2
-        MetricName: "CommitLatency"
-        Namespace: "AWS/RDS"
-        Period: 300
-        Statistic: Maximum
-        Threshold: 5.0
-        TreatMissingData: "notBreaching"
-  DeleteLatencyAlarm:
-    Type: "AWS::CloudWatch::Alarm"
-    Properties:
-        ActionsEnabled: true
-        AlarmActions:
-          - Ref: DatabaseSNSNotification
-        AlarmDescription: "Delete-latency"
-        ComparisonOperator: "GreaterThanOrEqualToThreshold"
-        Dimensions:
-          - Name: DBInstanceIdentifier
-            Value:
-                Ref: SQLDatabase
-        EvaluationPeriods: 2
-        MetricName: "DeleteLatency"
+        MetricName: "ReadLatency"
         Namespace: "AWS/RDS"
         Period: 300
         Statistic: Maximum
         Threshold: 1.0
         TreatMissingData: "notBreaching"
-  InsertLatencyAlarm:
+  WriteLatencyAlarm:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
         ActionsEnabled: true
         AlarmActions:
           - Ref: DatabaseSNSNotification
-        AlarmDescription: "Insert-latency"
+        AlarmDescription: "Write-latency"
         ComparisonOperator: "GreaterThanOrEqualToThreshold"
         Dimensions:
           - Name: DBInstanceIdentifier
             Value:
                 Ref: SQLDatabase
         EvaluationPeriods: 2
-        MetricName: "InsertLatency"
-        Namespace: "AWS/RDS"
-        Period: 300
-        Statistic: Maximum
-        Threshold: 1.0
-        TreatMissingData: "notBreaching"
-  SelectLatencyAlarm:
-    Type: "AWS::CloudWatch::Alarm"
-    Properties:
-        ActionsEnabled: true
-        AlarmActions:
-          - Ref: DatabaseSNSNotification
-        AlarmDescription: "Select-latency"
-        ComparisonOperator: "GreaterThanOrEqualToThreshold"
-        Dimensions:
-          - Name: DBInstanceIdentifier
-            Value:
-                Ref: SQLDatabase
-        EvaluationPeriods: 2
-        MetricName: "SelectLatency"
+        MetricName: "WriteLatency"
         Namespace: "AWS/RDS"
         Period: 300
         Statistic: Maximum
@@ -190,6 +152,12 @@ Outputs:
   SQLDatabaseEndpoint:
     Description: Database endpoint
     Value: !Sub "${SQLDatabase.Endpoint.Address}:${SQLDatabase.Endpoint.Port}"
-  BlockedTransactionAlarmARN:
-    Description: ARN of blocked transaction alarm
-    Value: !GetAtt BlockedTransactionAlarm.Arn
+  WritethroughputAlarmARN:
+    Description: ARN of Write throughput alarm
+    Value: !GetAtt WritethroughputAlarm.Arn
+  ReadLatencyAlarmARN:
+    Description: ARN of Read latency alarm
+    Value: !GetAtt ReadLatencyAlarm.Arn
+  WriteLatencyAlarmARN:
+    Description: ARN of Write latency alarm
+    Value: !GetAtt WritelatencyAlarm.Arn
